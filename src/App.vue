@@ -1,51 +1,99 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from "vue";
+import { toRaw } from 'vue' 
 
-  //数据
-  let queryInput = ref("")
-  let tableData = ref([
+//数据
+let queryInput = ref("");
+let tableData = ref([
   {
-    date: '2016-05-03',
-    name: 'Tom',
-    state: 'California',
-    city: 'Los Angeles',
-    address: 'No. 189, Grove St, Los Angeles',
-    zip: 'CA 90036',
-    tag: 'Home',
+    id: "1",
+    name: "Tom",
+    email: "123@163.com",
+    phone: "13200123121",
+    state: "California",
+    address: "No. 189, Grove St, Los Angeles",
   },
   {
-    date: '2016-05-02',
-    name: 'Tom',
-    state: 'California',
-    city: 'Los Angeles',
-    address: 'No. 189, Grove St, Los Angeles',
-    zip: 'CA 90036',
-    tag: 'Office',
+    id: "2",
+    name: "Tom",
+    email: "123@163.com",
+    phone: "13200123122",
+    state: "California",
+    address: "No. 189, Grove St, Los Angeles",
   },
   {
-    date: '2016-05-04',
-    name: 'Tom',
-    state: 'California',
-    city: 'Los Angeles',
-    address: 'No. 189, Grove St, Los Angeles',
-    zip: 'CA 90036',
-    tag: 'Home',
+    id: "3",
+    name: "Tom",
+    email: "123@163.com",
+    phone: "13200123123",
+    state: "California",
+    address: "No. 189, Grove St, Los Angeles",
   },
   {
-    date: '2016-05-01',
-    name: 'Tom',
-    state: 'California',
-    city: 'Los Angeles',
-    address: 'No. 189, Grove St, Los Angeles',
-    zip: 'CA 90036',
-    tag: 'Office',
+    id: "4",
+    name: "Tom",
+    email: "123@163.com",
+    phone: "13200123124",
+    state: "California",
+    address: "No. 189, Grove St, Los Angeles",
   },
-  ])
+]);
 
-  //方法
-    const handleRowClick = () => {
-      console.log('click')
-    }
+let multipleSelection = ref([]);
+let dialogFormVisible = ref(false);
+let tableForm = ref({
+  name: "张三",
+  email: "123@163.com",
+  phone: "13200123123",
+  state: "在职",
+  address: "广东省",
+});
+let dialogType = ref("add");
+
+//方法
+//删除一条
+const handleRowDel = ({ id }) => {
+  //console.log(id);
+  //通过id 获取到条目对应的索引值
+  let index = tableData.value.findIndex((item) => item.id === id);
+  //通过索引值进行删除对应的条目
+  tableData.value.splice(index, 1);
+};
+//多选删除
+const handleDelList = () => {
+  multipleSelection.forEach((id) => {
+    handleRowDel({ id });
+  });
+  multipleSelection = [];
+};
+//选中
+
+const handleSelectionChange = (val) => {
+   multipleSelection.value = val
+  console.log(val);
+  multipleSelection = [];
+  val.forEach((item) => {
+    multipleSelection.push(item.id);
+  });
+};
+
+
+//增加
+const handleAdd = () => {
+  dialogFormVisible.value = true;
+  tableForm.value = {};
+};
+//确认
+const dialogConfirm = () => {
+  dialogFormVisible.value = false;
+  // 拿到数据
+
+  // 添加到 table 中
+  tableData.value.push({
+    id: (tableData.length + 1).toString(),
+    ...tableForm,
+  });
+}
 
 </script>
 
@@ -57,36 +105,85 @@ import { ref } from 'vue';
     </div>
     <!-- query -->
     <div class="query-box">
-      <el-input v-model="queryInput" placeholder="请输入姓名搜索🔍" />
-      <el-button type="primary">增加</el-button>
+      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索🔍" />
+      <div class="bten-list">
+        <el-button type="primary" @click="handleAdd">增加</el-button>
+        <el-button type="danger" @click="handleDelList" v-if = "multipleSelection.length > 0">删除多选</el-button>
+      </div>
     </div>
     <!-- table -->
-    <el-table :data="tableData" style="width: 100%">
-    <el-table-column fixed prop="date" label="Date" width="150" />
-    <el-table-column prop="name" label="Name" width="120" />
-    <el-table-column prop="state" label="State" width="120" />
-    <el-table-column prop="city" label="City" width="120" />
-    <el-table-column prop="address" label="Address" width="600" />
-    <el-table-column prop="zip" label="Zip" width="120" />
-    <el-table-column fixed="right" label="Operations" width="120">
-      <template #default>
-        <el-button link type="primary" size="small" @click="handleRowClick"
-          >Detail</el-button
-        >
-        <el-button link type="primary" size="small">Edit</el-button>
+    <el-table border ref="multipleTableRef" :data="tableData" style="width: 100%"
+      @selection-change="handleSelectionChange">
+      <el-table-column prop="id" type="selection" width="55" />
+      <el-table-column prop="name" label="姓名" width="120" />
+      <el-table-column prop="phone" label="电话" width="120" />
+      <el-table-column prop="email" label="邮箱" width="120" />
+      <el-table-column prop="state" label="状态" width="120" />
+      <el-table-column prop="address" label="地址" width="330" />
+
+      <el-table-column fixed="right" label="操作" width="120">
+        <template #default="scope">
+          <el-button link type="primary" size="small" @click="handleRowDel(scope.row)" style="color: #f56c6c">
+            删除
+          </el-button>
+          <el-button link type="primary" size="small">编辑</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- dialog  -->
+    <el-dialog v-model="dialogFormVisible" :title="dialogType === 'add' ? '新增' : '编辑'">
+      <el-form :model="tableForm">
+        <el-form-item label="姓名" :label-width="60">
+          <el-input v-model="tableForm.name" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <el-form :model="tableForm">
+        <el-form-item label="邮箱" :label-width="60">
+          <el-input v-model="tableForm.email" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <el-form :model="tableForm">
+        <el-form-item label="电话" :label-width="60">
+          <el-input v-model="tableForm.phone" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <el-form :model="tableForm">
+        <el-form-item label="状态" :label-width="60">
+          <el-input v-model="tableForm.state" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <el-form :model="tableForm">
+        <el-form-item label="地址" :label-width="60">
+          <el-input v-model="tableForm.address" autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="dialogConfirm"> 确定 </el-button>
+        </span>
       </template>
-    </el-table-column>
-  </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <style scoped>
-  .table-box{
-    width: 800px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
+.table-box {
+  margin: 200px auto;
+  width: 800px;
+}
 
+.title {
+  text-align: center;
+}
+
+.query-box {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.query-input {
+  width: 150px;
+}
 </style>
