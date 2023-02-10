@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import { toRaw } from 'vue' 
+import request from "./utils/requires.js"
 
 //数据
 let queryInput = $ref("");
@@ -38,6 +38,8 @@ let tableData = $ref([
     address: "No. 189, Grove St, Los Angeles",
   },
 ])
+
+let tableDataCopy = Object.assign(tableData)
 
 let multipleSelection = $ref([]);
 let dialogFormVisible = $ref(false);
@@ -82,19 +84,19 @@ const getTableData = async (cur = 1) => {
 
   //搜索
 
- const handleQuerName = async (val) => {
+ const handleQueryName = async (val) => {
   
-  if (val.length > 0) {
-    tableData = tableData.filter(item => (item.name).toLowerCase().match(val.toLowerCase()))
-  } else {
-    tableData = tableDataCopy
-  }
+  // if (val.length > 0) {
+  //   tableData = tableData.filter(item => (item.name).toLowerCase().match(val.toLowerCase()))
+  // } else {
+  //   tableData = tableDataCopy
+  // }
   console.log(val);
 
   if (val.length > 0) {
     tableData = await request.get(`/list/${val}`)
   } else {
-    await gatTableDate(curPage)
+    await getTableData(curPage)
   }
 
  }
@@ -107,59 +109,79 @@ const handleEdit = (row) => {
 }
 
 //删除一条
-const handleRowDel = ({ id }) => {
+const handleRowDel = async ({ ID }) => {
   //console.log(id);
   //通过id 获取到条目对应的索引值
-  let index = tableData.value.findIndex(item => item.id === id);
-  //通过索引值进行删除对应的条目
-  tableData.splice(index, 1);
+  // let index = tableData.value.findIndex(item => item.id === id);
+  // //通过索引值进行删除对应的条目
+  // tableData.splice(index, 1);
 
-  // await request.delete(`/delete/${ID}`)
-  // await getTableData(curPage)
+   await request.delete(`/delete/${ID}`)
+   await getTableData(curPage)
 };
 
-// const handleDelList = () => {
-//   multipleSelection.forEach(ID => {
-//     handleRowDle({ID})
-//   })
-//   multipleSelection = []
-// }
+const handleDelList = () => {
+  multipleSelection.forEach(ID => {
+    handleRowDel({ID})
+  })
+  multipleSelection = []
+}
 
 //多选删除
-const handleDelList = () => {
-  multipleSelection.forEach((id) => {
-    handleRowDel({ id });
-  });
-  multipleSelection = [];
-};
+// const handleDelList = () => {
+//   multipleSelection.forEach((id) => {
+//     handleRowDel({ id });
+//   });
+//   multipleSelection = [];
+// };
 //选中
 
 const handleSelectionChange = (val) => {
-    multipleSelection = val
+   // multipleSelection = val
   //console.log(val);
   multipleSelection = [];
   val.forEach((item) => {
-    multipleSelection.push(item.id);
+    multipleSelection.push(item.ID);
   });
 };
 
 
 //增加
 const handleAdd = () => {
-  dialogFormVisible.value = true;
-  tableForm.value = {};
+  dialogFormVisible = true;
+  tableForm = {};
   dialogType = 'add'
 };
 //确认
-const dialogConfirm = () => {
-  dialogFormVisible.value = false;
+const dialogConfirm = async () => {
+  dialogFormVisible = false;
   // 拿到数据
 
   // 添加到 table 中
-  tableData.value.push({
-    id: (tableData.length + 1).toString(),
-    ...tableForm,
-  });
+  // tableData.value.push({
+  //   id: (tableData.length + 1).toString(),
+  //   ...tableForm,
+  // });
+  if (dialogType === 'add') {
+
+    //添加数据
+    await request.post("/add", {
+      ...tableForm
+    })
+
+    //刷新数据
+    await getTableData(curPage)
+
+  } else {
+
+    //修改数据
+    await request.put(`/update/${tableForm.ID}`, {
+      ...tableForm
+    })
+
+    //刷新数据
+    await getTableData(curPage)
+  }
 }
 
 </script>
@@ -168,12 +190,12 @@ const dialogConfirm = () => {
   <div class="table-box">
     <!-- 标题 -->
     <div class="title">
-      <h2>简单列表 CRUD Demo</h2>
+      <h2>ERP 人力资源管理系统</h2>
     </div>
     <!-- query -->
     <div class="query-box">
-      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索🔍" @change = "handleQuerName"/>
-      <div class="bten-list">
+      <el-input class="query-input" v-model="queryInput" placeholder="请输入姓名搜索🔍" @change = "handleQueryName"/>
+      <div class="btn-list">
         <el-button type="primary" @click="handleAdd">增加</el-button>
         <el-button type="danger" @click="handleDelList" v-if = "multipleSelection.length > 0">删除多选</el-button>
       </div>

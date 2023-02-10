@@ -17,7 +17,7 @@ export default defineConfig({
 
     proxy: {
       "/user": {
-        target: "http://127.0.0.1:3330",
+        target: "http://127.0.0.1:8989",
       },
     },
   },
